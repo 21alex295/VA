@@ -31,7 +31,7 @@ kernelOpening = np.ones((3,1), np.uint8)
 opening = cv2.morphologyEx(closing, cv2.MORPH_OPEN, kernelOpening)
 
 
-#Ensina as duas imaxes unha ao caron doutra
+#Ensina as duas imaxes unha aocaron doutra
 two_images = np.concatenate((img, opening), axis=1)
 plt.imshow(two_images)
 plt.xticks([])
