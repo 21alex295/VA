@@ -6,7 +6,7 @@ img =cv2.imread(impath + "im4.jpeg")
 
 #Suavizamos a imaxe para eliminar ruido
 blur = cv2.bilateralFilter(img,15,75,75)
-
+ddd
 #erosion para eliminar o que non sexan raias horizontais brancas
 kernelErosion = np.ones((1,15),np.uint8)
 erosion = cv2.erode(blur,kernelErosion,iterations = 1)
