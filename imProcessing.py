@@ -1,12 +1,12 @@
 import cv2
 import numpy as np
 import matplotlib.pyplot as plt
-impath = "C:/Users/21ale/Pictures/6. AS-OCT/"
-img =cv2.imread(impath + "im4.jpeg")
+impath = "/home/alex/Documents/Clase/2018-2019/VA/Proxecto/project-images/"
+img =cv2.imread(impath + "im7.jpeg")
 
 #Suavizamos a imaxe para eliminar ruido
 blur = cv2.bilateralFilter(img,15,75,75)
-ddd
+
 #erosion para eliminar o que non sexan raias horizontais brancas
 kernelErosion = np.ones((1,15),np.uint8)
 erosion = cv2.erode(blur,kernelErosion,iterations = 1)
