@@ -3,43 +3,69 @@ import numpy as np
 import matplotlib.pyplot as plt
 inpath = "/home/alex/Documents/Clase/2018-2019/VA/Proxecto/project-images/"
 outpath = "/home/alex/Documents/Clase/2018-2019/VA/Proxecto/project-results/"
+
 for i in range(1, 13):
     print(i)
     img =cv2.imread(inpath + "im{}.jpeg".format(i), 0)
-    equ = cv2.equalizeHist(img)
-
-
 
     #Suavizamos a imaxe para eliminar ruido, escollese este por optimo nos bordes
     #blur = cv2.bilateralFilter(equ,30,75,75)
-    blur = cv2.medianBlur(equ, 9)
+    blur = cv2.medianBlur(img, 5)
 
-    #kernel = np.array([[-1, -1, -1], [-1, 9, -1], [-1, -1, -1]])
-    #sharp = cv2.filter2D(blur, -1, kernel)
+    blur = cv2.bilateralFilter(blur, 15, 30, 30)
 
-    #Pasamos a imaxe a binaria
-    thresh = 210
-    im_bw = cv2.threshold(blur, thresh, 255, cv2.THRESH_BINARY)[1]
+    equ = cv2.equalizeHist(blur)
+    int, binary = cv2.threshold(equ, 220, 255, cv2.THRESH_BINARY)
 
 
-    #Opening para eliminar os puntos brancos que non se eliminaron no suavizado
-    kernelOpening = np.ones((2,10), np.uint8)
-    opening = cv2.morphologyEx(im_bw, cv2.MORPH_OPEN, kernelOpening)
-
-
-    #Opening para eliminar os puntos brancos que non se eliminaron no suavizado
-    kernelOpening = np.ones((4,10), np.uint8)
-    opening = cv2.morphologyEx(opening, cv2.MORPH_OPEN, kernelOpening)
+    #closingKernel = cv2.getStructuringElement(cv2.MORPH_RECT, (35,4))
+    #closing = cv2.morphologyEx(binary, cv2.MORPH_CLOSE,closingKernel )
 
 
 
-    #Facemos un closing para reconstruir as raias
-    kernelClosing = np.ones((1,60), np.uint8)
-    closing = cv2.morphologyEx(opening, cv2.MORPH_CLOSE, kernelClosing)
+    kernel = np.array([[0,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255, 0]], np.uint8)
+    erode = cv2.erode(binary, kernel)
 
-    canny = cv2.Canny(closing, 200, 255)
+    closingKernel = cv2.getStructuringElement(cv2.MORPH_RECT, (50,4))
+    closing = cv2.morphologyEx(erode, cv2.MORPH_CLOSE,closingKernel )
+
+    openKernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (30,15))
+    opening = cv2.morphologyEx(closing, cv2.MORPH_CLOSE, kernel)
+
+    closingKernel2 = cv2.getStructuringElement(cv2.MORPH_RECT, (4,30))
+    closing2 = cv2.morphologyEx(erode, cv2.MORPH_CLOSE,closingKernel2 )
+
+    im2, contours, hierarchy = cv2.findContours(binary,cv2.RETR_TREE,cv2.CHAIN_APPROX_SIMPLE)
+    ###################################
+    binaryAux = np.copy(binary)
+    cv2.drawContours(binaryAux, contours,  - 1, (0, 0, 0), 3)
+    contourLens = contours[len(contours) - 2]
+
+    boundRect = []
+
+    bordes = binary - binaryAux
+
+
+
+
+
+    kernel = cv2.getStructuringElement(cv2.MORPH_CROSS, (3,3))
+    erode = cv2.erode(bordes, kernel)
+    j = 0
+    for j in range(len(contours)):
+        boundRect.append(cv2.boundingRect(contours[j]))
+        x, y, w, h = cv2.boundingRect(contours[j])
+        if (w - x) < 500:
+            cv2.rectangle(erode,(x, y), (x + w, y + h), (0, 0, 0), -1)
+        else:
+            cv2.rectangle(erode, (x, y), (x + w, y + h), (255, 255, 255), 2)
+
+    ###################################
+
+
     #Ensina as duas imaxes unha aocaron doutra
-    two_images = np.concatenate((blur, canny), axis=1)
+    backtorgb = cv2.cvtColor(img, cv2.COLOR_GRAY2RGB)
+    two_images = np.concatenate((bordes, erode), axis=1)
     cv2.imwrite(outpath + "imres-{}.jpeg".format(i), two_images)
 
     #plt.imshow(two_images)
@@ -70,8 +96,23 @@ for i in range(1, 13):
     #Opening para eliminar raias da parte de abaixo
     kernelOpening = np.ones((3,1), np.uint8)
     opening = cv2.morphologyEx(closing, cv2.MORPH_OPEN, kernelOpening)
+
+    #Mide as distancias entre a lente e a cornea
     
+        contourLens = np.squeeze(contourLens)
+    xvalues_lens = [i[0] for i in contourLens]
+    yvalues_lens = [i[1] for i in contourLens]
+    contourCornea = contours[len(contours) - 8]
+    contourCornea = np.squeeze(contourCornea)
+    xvalues_cornea = [i[0] for i in contourCornea]
+    yvalues_cornea = [i[1] for i in contourCornea]
     
+    distance = []
+    j=0
+    for j in range(len(xvalues_cornea)):
+        for k in range(len(xvalues_lens)):
+            if xvalues_cornea[j] == xvalues_lens[k]:
+                distance.append(yvalues_cornea[j] - yvalues_lens[k])
     #Ensina as duas imaxes unha aocaron doutra
     two_images = np.concatenate((img, opening), axis=1)
     plt.imshow(two_images)
